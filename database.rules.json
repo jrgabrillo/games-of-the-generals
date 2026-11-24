@@ -1,0 +1,29 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "rooms": {
+      ".read": "auth != null",
+      "$roomId": {
+        ".write": "auth != null && (!data.exists() || data.child('hostUid').val() == auth.uid || data.child('players/white/uid').val() == auth.uid || data.child('players/black/uid').val() == auth.uid || data.child('playerCount').val() < 2)",
+        "playerCount": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2"
+        }
+      }
+    },
+    "games": {
+      "$roomId": {
+        ".read": "auth != null && (root.child('rooms').child($roomId).child('players/white/uid').val() == auth.uid || root.child('rooms').child($roomId).child('players/black/uid').val() == auth.uid)",
+        ".write": "auth != null && (root.child('rooms').child($roomId).child('players/white/uid').val() == auth.uid || root.child('rooms').child($roomId).child('players/black/uid').val() == auth.uid)"
+      }
+    },
+    "rosters": {
+      "$roomId": {
+        ".read": "auth != null && (root.child('rooms').child($roomId).child('players/white/uid').val() == auth.uid || root.child('rooms').child($roomId).child('players/black/uid').val() == auth.uid)",
+        "$side": {
+          ".write": "auth != null && root.child('rooms').child($roomId).child('players').child($side).child('uid').val() == auth.uid"
+        }
+      }
+    }
+  }
+}

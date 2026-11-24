@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/api/roomservice.ts","./src/components/piecetile.tsx","./src/engine/roster.ts","./src/engine/rules.ts","./src/engine/types.ts","./src/lib/firebase.ts","./src/lib/sound.ts","./src/pages/gamepage.tsx","./src/pages/lobbypage.tsx","./tests/engine/rules.test.ts"],"version":"5.9.3"}
