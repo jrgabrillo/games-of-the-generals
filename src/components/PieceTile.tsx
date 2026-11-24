@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { PlayerSide, RankId } from '../engine/types';
 
 interface PieceTileProps {
@@ -7,7 +7,9 @@ interface PieceTileProps {
   hidden?: boolean;
 }
 
-const LABELS: Record<RankId, string> = {
+type TileId = RankId | 'hidden';
+
+const SHORT_LABELS: Record<TileId, string> = {
   '5-star': '5★ GEN',
   '4-star': '4★ GEN',
   '3-star': '3★ GEN',
@@ -23,263 +25,202 @@ const LABELS: Record<RankId, string> = {
   private: 'PRIVATE',
   spy: 'SPY',
   flag: 'FLAG',
+  hidden: 'UNKNOWN',
 };
 
-function renderStar(x: number, y: number, s: number, fg: string, key: string) {
-  const pts: string[] = [];
-  for (let i = 0; i < 10; i++) {
-    const r = i % 2 === 0 ? s : s * 0.42;
-    const a = (Math.PI / 5) * i - Math.PI / 2;
-    pts.push(`${(x + r * Math.cos(a)).toFixed(1)},${(y + r * Math.sin(a)).toFixed(1)}`);
+const STAR_5X5 = ['..I..', 'IIIII', '.III.', '.I.I.', 'I...I'];
+const SUN_5X5 = ['I.I.I', '.III.', 'II.II', '.III.', 'I.I.I'];
+const TRI_5X5 = ['..I..', '.III.', '.I.I.', 'IIIII', 'IIIII'];
+const CHEV_9X4 = ['....I....', '...III...', '..II.II..', '.II...II.'];
+const SPY_EYES = [
+  'II.......II',
+  '..II...II..',
+  'IIII...IIII',
+  'I.II...II.I',
+  'IIII...IIII',
+  '...........',
+  '...IIIII...',
+];
+const FLAG_ICON = [
+  'II......',
+  'IIIIIIII',
+  'IIIIIII.',
+  'IIIIII..',
+  'II......',
+  'II......',
+  'II......',
+  'II......',
+  'II......',
+  'IIII....',
+];
+const QUESTION_ICON = ['.IIII.', 'II..II', '....II', '...II.', '..II..', '......', '..II..'];
+
+function stamp(grid: string[][], ox: number, oy: number, pattern: string[]) {
+  for (let y = 0; y < pattern.length; y++) {
+    for (let x = 0; x < pattern[y].length; x++) {
+      const ch = pattern[y][x];
+      if (ch !== '.' && oy + y >= 0 && oy + y < 24 && ox + x >= 0 && ox + x < 24) {
+        grid[oy + y][ox + x] = ch;
+      }
+    }
   }
-  return <polygon key={key} points={pts.join(' ')} fill={fg} />;
 }
 
-function renderSun(x: number, y: number, r: number, fg: string, bg: string, key: string) {
-  const rays: React.ReactNode[] = [];
-  for (let i = 0; i < 8; i++) {
-    const a = (Math.PI / 4) * i;
-    rays.push(
-      <line
-        key={`${key}-r${i}`}
-        x1={(x + (r + 0.5) * Math.cos(a)).toFixed(1)}
-        y1={(y + (r + 0.5) * Math.sin(a)).toFixed(1)}
-        x2={(x + (r + 2.4) * Math.cos(a)).toFixed(1)}
-        y2={(y + (r + 2.4) * Math.sin(a)).toFixed(1)}
-        stroke={fg}
-        strokeWidth="1.3"
-        strokeLinecap="round"
-      />,
-    );
+function buildTileGrid(id: TileId): string[][] {
+  const g: string[][] = Array.from({ length: 24 }, () => Array<string>(24).fill('.'));
+
+  for (let y = 1; y < 23; y++) {
+    for (let x = 1; x < 23; x++) {
+      if (y === 1 || y === 22 || x === 1 || x === 22) {
+        g[y][x] = 'O';
+      } else if (y === 2 || x === 2) {
+        g[y][x] = 'H';
+      } else if (y === 21 || x === 21) {
+        g[y][x] = 'S';
+      } else {
+        g[y][x] = 'B';
+      }
+    }
   }
-  return (
-    <g key={key}>
-      {rays}
-      <circle cx={x} cy={y} r={r} fill={fg} />
-      <rect x={x - 0.6} y={y - 1.6} width={1.2} height={3.2} fill={bg} />
-    </g>
-  );
-}
 
-function renderTri(x: number, y: number, s: number, fg: string, bg: string, key: string) {
-  return (
-    <g key={key}>
-      <polygon
-        points={`${x},${y - s} ${x - s * 0.9},${y + s * 0.75} ${x + s * 0.9},${y + s * 0.75}`}
-        fill={fg}
-      />
-      <rect x={x - 0.55} y={y - 1.2} width={1.1} height={2.8} fill={bg} />
-    </g>
-  );
-}
+  if (id !== 'hidden') {
+    for (let y = 2; y <= 8; y++) {
+      for (let x = 2; x <= 8; x++) {
+        if (x + y <= 10) g[y][x] = 'I';
+      }
+    }
+  }
 
-function renderChevron(y: number, fg: string, key: string) {
-  return (
-    <path
-      key={key}
-      d={`M13 ${y + 4} L20 ${y - 1.5} L27 ${y + 4}`}
-      fill="none"
-      stroke={fg}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  );
+  switch (id) {
+    case '5-star':
+      stamp(g, 11, 3, STAR_5X5);
+      stamp(g, 6, 7, STAR_5X5);
+      stamp(g, 16, 7, STAR_5X5);
+      stamp(g, 8, 12, STAR_5X5);
+      stamp(g, 14, 12, STAR_5X5);
+      break;
+    case '4-star':
+      stamp(g, 7, 4, STAR_5X5);
+      stamp(g, 14, 4, STAR_5X5);
+      stamp(g, 7, 11, STAR_5X5);
+      stamp(g, 14, 11, STAR_5X5);
+      break;
+    case '3-star':
+      stamp(g, 15, 3, STAR_5X5);
+      stamp(g, 10, 8, STAR_5X5);
+      stamp(g, 5, 13, STAR_5X5);
+      break;
+    case '2-star':
+      stamp(g, 6, 8, STAR_5X5);
+      stamp(g, 14, 8, STAR_5X5);
+      break;
+    case '1-star':
+      stamp(g, 10, 8, STAR_5X5);
+      break;
+    case 'colonel':
+      stamp(g, 11, 4, SUN_5X5);
+      stamp(g, 6, 11, SUN_5X5);
+      stamp(g, 15, 11, SUN_5X5);
+      break;
+    case 'lt-colonel':
+      stamp(g, 6, 8, SUN_5X5);
+      stamp(g, 14, 8, SUN_5X5);
+      break;
+    case 'major':
+      stamp(g, 10, 8, SUN_5X5);
+      break;
+    case 'captain':
+      stamp(g, 10, 4, TRI_5X5);
+      stamp(g, 6, 11, TRI_5X5);
+      stamp(g, 14, 11, TRI_5X5);
+      break;
+    case '1st-lt':
+      stamp(g, 6, 8, TRI_5X5);
+      stamp(g, 14, 8, TRI_5X5);
+      break;
+    case '2nd-lt':
+      stamp(g, 10, 8, TRI_5X5);
+      break;
+    case 'sergeant':
+      stamp(g, 8, 4, CHEV_9X4);
+      stamp(g, 8, 8, CHEV_9X4);
+      stamp(g, 8, 12, CHEV_9X4);
+      break;
+    case 'private':
+      stamp(g, 8, 8, CHEV_9X4);
+      break;
+    case 'spy':
+      stamp(g, 7, 8, SPY_EYES);
+      break;
+    case 'flag':
+      stamp(g, 9, 5, FLAG_ICON);
+      break;
+    case 'hidden':
+      stamp(g, 9, 6, QUESTION_ICON);
+      break;
+  }
+
+  return g;
 }
 
 export const PieceTile: React.FC<PieceTileProps> = ({ rank, side, hidden = false }) => {
-  if (hidden || !rank) {
-    const backBg = side === 'white' ? '#e7e5e4' : '#18181b';
-    const backStroke = side === 'white' ? '#78716c' : '#52525b';
-    const backInner = side === 'white' ? '#a8a29e' : '#3f3f46';
-    const backInk = side === 'white' ? '#57534e' : '#71717a';
-    return (
-      <svg viewBox="0 0 40 36" className="w-[90%] h-[84%] drop-shadow">
-        <rect x="1" y="1" width="38" height="34" rx="4" fill={backBg} stroke={backStroke} strokeWidth="1.8" />
-        <rect
-          x="4"
-          y="4"
-          width="32"
-          height="28"
-          rx="2"
-          fill="none"
-          stroke={backInner}
-          strokeWidth="1"
-          strokeDasharray="3 2"
-        />
-        <path
-          d="M16 14a4 4 0 0 1 8 0c0 2.5-3 3-3 5.5m0 3.5v1"
-          fill="none"
-          stroke={backInk}
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      </svg>
-    );
-  }
-
+  const tileId: TileId = hidden || !rank ? 'hidden' : rank;
   const isWhite = side === 'white';
-  const bg = isWhite ? '#f8fafc' : '#18181b';
-  const fg = isWhite ? '#111827' : '#f8fafc';
-  const border = isWhite ? '#334155' : '#52525b';
-  const sashBg = isWhite ? '#111827' : '#e4e4e7';
 
-  let emblem: React.ReactNode = null;
-  switch (rank) {
-    case '5-star':
-      emblem = (
-        <>
-          {renderStar(22, 8.5, 3.3, fg, 's1')}
-          {renderStar(15.5, 13.5, 3.3, fg, 's2')}
-          {renderStar(28.5, 13.5, 3.3, fg, 's3')}
-          {renderStar(17.5, 20.5, 3.3, fg, 's4')}
-          {renderStar(26.5, 20.5, 3.3, fg, 's5')}
-        </>
-      );
-      break;
-    case '4-star':
-      emblem = (
-        <>
-          {renderStar(16.5, 10.5, 3.4, fg, 's1')}
-          {renderStar(27, 10.5, 3.4, fg, 's2')}
-          {renderStar(16.5, 19.5, 3.4, fg, 's3')}
-          {renderStar(27, 19.5, 3.4, fg, 's4')}
-        </>
-      );
-      break;
-    case '3-star':
-      emblem = (
-        <>
-          {renderStar(28, 10, 3.4, fg, 's1')}
-          {renderStar(21.5, 15.5, 3.4, fg, 's2')}
-          {renderStar(15, 21, 3.4, fg, 's3')}
-        </>
-      );
-      break;
-    case '2-star':
-      emblem = (
-        <>
-          {renderStar(16.5, 15.5, 3.8, fg, 's1')}
-          {renderStar(27.5, 15.5, 3.8, fg, 's2')}
-        </>
-      );
-      break;
-    case '1-star':
-      emblem = renderStar(22, 15.5, 4.4, fg, 's1');
-      break;
-    case 'colonel':
-      emblem = (
-        <>
-          {renderSun(22, 10.5, 2.4, fg, bg, 'u1')}
-          {renderSun(16, 20, 2.4, fg, bg, 'u2')}
-          {renderSun(28, 20, 2.4, fg, bg, 'u3')}
-        </>
-      );
-      break;
-    case 'lt-colonel':
-      emblem = (
-        <>
-          {renderSun(16.5, 16, 2.7, fg, bg, 'u1')}
-          {renderSun(27.5, 16, 2.7, fg, bg, 'u2')}
-        </>
-      );
-      break;
-    case 'major':
-      emblem = renderSun(22, 16, 3.3, fg, bg, 'u1');
-      break;
-    case 'captain':
-      emblem = (
-        <>
-          {renderTri(22, 11, 3.4, fg, bg, 't1')}
-          {renderTri(16, 20.5, 3.4, fg, bg, 't2')}
-          {renderTri(28, 20.5, 3.4, fg, bg, 't3')}
-        </>
-      );
-      break;
-    case '1st-lt':
-      emblem = (
-        <>
-          {renderTri(16.5, 16, 3.8, fg, bg, 't1')}
-          {renderTri(27.5, 16, 3.8, fg, bg, 't2')}
-        </>
-      );
-      break;
-    case '2nd-lt':
-      emblem = renderTri(22, 16, 4.4, fg, bg, 't1');
-      break;
-    case 'sergeant':
-      emblem = (
-        <>
-          {renderChevron(11.5, fg, 'c1')}
-          {renderChevron(15.5, fg, 'c2')}
-          {renderChevron(19.5, fg, 'c3')}
-        </>
-      );
-      break;
-    case 'private':
-      emblem = renderChevron(16, fg, 'c1');
-      break;
-    case 'spy':
-      emblem = (
-        <>
-          <path
-            d="M9.5 11.5 L19 16.5 L21 16.5 L31.5 11"
-            fill="none"
-            stroke={fg}
-            strokeWidth="2.1"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M10.5 15.5 Q14.5 19 18.5 17.5 Q14.5 14.5 10.5 15.5 Z"
-            fill="none"
-            stroke={fg}
-            strokeWidth="1.5"
-          />
-          <circle cx="15" cy="16.8" r="1.3" fill={fg} />
-          <path
-            d="M22.5 17.5 Q26.5 19 30.5 15.5 Q26.5 14.5 22.5 17.5 Z"
-            fill="none"
-            stroke={fg}
-            strokeWidth="1.5"
-          />
-          <circle cx="26" cy="16.8" r="1.3" fill={fg} />
-          <path
-            d="M16.5 22 Q20.5 20.5 24.5 22"
-            fill="none"
-            stroke={fg}
-            strokeWidth="1.3"
-            strokeLinecap="round"
-          />
-        </>
-      );
-      break;
-    case 'flag':
-      emblem = (
-        <>
-          <line x1="14" y1="7" x2="14" y2="23.5" stroke={fg} strokeWidth="2" strokeLinecap="round" />
-          <path d="M14 8 L29 11.5 L14 16 Z" fill={fg} />
-        </>
-      );
-      break;
-  }
+  const pixels = useMemo(() => {
+    const grid = buildTileGrid(tileId);
+    const palette: Record<string, string> = isWhite
+      ? {
+          O: '#0f172a',
+          H: '#ffffff',
+          B: '#f1f5f9',
+          S: '#cbd5e1',
+          I: '#111827',
+        }
+      : {
+          O: '#09090b',
+          H: '#3f3f46',
+          B: '#18181b',
+          S: '#09090b',
+          I: '#f8fafc',
+        };
+
+    const rects: React.ReactNode[] = [];
+    for (let y = 0; y < 24; y++) {
+      for (let x = 0; x < 24; x++) {
+        const ch = grid[y][x];
+        if (ch !== '.') {
+          rects.push(
+            <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill={palette[ch]} />,
+          );
+        }
+      }
+    }
+    return rects;
+  }, [tileId, isWhite]);
+
+  const labelBg = isWhite ? '#0f172a' : '#f8fafc';
+  const labelFg = isWhite ? '#f8fafc' : '#09090b';
 
   return (
-    <svg viewBox="0 0 40 36" className="w-[92%] h-[88%] drop-shadow">
-      <rect x="1" y="1" width="38" height="34" rx="4" fill={bg} stroke={border} strokeWidth="1.6" />
-      <polygon points="1,1 13,1 1,13" fill={sashBg} />
-      {emblem}
+    <svg
+      viewBox="0 0 24 24"
+      shapeRendering="crispEdges"
+      className="w-[92%] h-[92%] drop-shadow block"
+      style={{ imageRendering: 'pixelated' }}
+    >
+      {pixels}
+      <rect x="2" y="18" width="20" height="4" fill={labelBg} />
       <text
-        x="20"
-        y="32.2"
+        x="12"
+        y="21"
         textAnchor="middle"
-        fontSize="6"
-        fontWeight="800"
-        fontFamily="system-ui, sans-serif"
-        letterSpacing="0.15"
-        fill={fg}
+        fontSize="3.1"
+        fontWeight="900"
+        fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+        fill={labelFg}
       >
-        {LABELS[rank]}
+        {SHORT_LABELS[tileId]}
       </text>
     </svg>
   );

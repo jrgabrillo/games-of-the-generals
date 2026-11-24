@@ -25,6 +25,44 @@ interface GamePageProps {
 }
 
 const PRESET_KEY = 'gotg_saved_preset_v1';
+const COL_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
+
+const PixelBoardFrame: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="pixel-board-outer w-full">
+    <div className="pixel-board-wood p-1.5 sm:p-2">
+      {/* Top column labels */}
+      <div className="grid grid-cols-9 px-3.5 pb-0.5 text-center text-[10px] font-black text-[#6b3410] select-none">
+        {COL_LABELS.map((l) => (
+          <span key={`top-${l}`}>{l}</span>
+        ))}
+      </div>
+      <div className="flex items-stretch">
+        {/* Left row labels */}
+        <div className="flex flex-col justify-around pr-1 text-[10px] font-black text-[#6b3410] select-none">
+          {[8, 7, 6, 5, 4, 3, 2, 1].map((n) => (
+            <span key={`l-${n}`}>{n}</span>
+          ))}
+        </div>
+        {/* 9x8 Grid */}
+        <div className="flex-1 grid grid-cols-9 aspect-[9/8] border-2 border-[#382e3b]">
+          {children}
+        </div>
+        {/* Right row labels */}
+        <div className="flex flex-col justify-around pl-1 text-[10px] font-black text-[#6b3410] select-none">
+          {[8, 7, 6, 5, 4, 3, 2, 1].map((n) => (
+            <span key={`r-${n}`}>{n}</span>
+          ))}
+        </div>
+      </div>
+      {/* Bottom column labels */}
+      <div className="grid grid-cols-9 px-3.5 pt-0.5 text-center text-[10px] font-black text-[#6b3410] select-none">
+        {COL_LABELS.map((l) => (
+          <span key={`bot-${l}`}>{l}</span>
+        ))}
+      </div>
+    </div>
+  </div>
+);
 
 export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
   const [room, setRoom] = useState<RoomMeta | null>(null);
@@ -34,12 +72,10 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
   const [muted, setMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Setup state
   const [setupMap, setSetupMap] = useState<Record<CoordKey, { id: string; rank: RankId }>>({});
   const [setupSelected, setSetupSelected] = useState<CoordKey | null>(null);
   const [submittingSetup, setSubmittingSetup] = useState(false);
 
-  // Active game UI state
   const [selectedCoord, setSelectedCoord] = useState<CoordKey | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [showResignConfirm, setShowResignConfirm] = useState(false);
@@ -74,7 +110,6 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
     return attachPresence(roomId, mySide);
   }, [roomId, mySide]);
 
-  // Initialize random setup whenever entering setup phase
   useEffect(() => {
     if (room?.status === 'setup' && mySide && Object.keys(setupMap).length === 0) {
       setSetupMap(createRandomSetup(mySide).boardCoords);
@@ -86,7 +121,6 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
     }
   }, [room?.status, mySide, setupMap]);
 
-  // Sound & modal reset on new moves / game end
   useEffect(() => {
     if (!game) return;
     if (prevMoveCountRef.current !== -1 && game.moveCount > prevMoveCountRef.current) {
@@ -101,7 +135,6 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
     prevWinnerRef.current = game.winner ?? null;
   }, [game, muted, mySide]);
 
-  // Per-turn clock ticker
   useEffect(() => {
     if (room?.status !== 'playing' || !game || game.winner) return;
     const id = window.setInterval(() => setNowMs(Date.now()), 250);
@@ -112,7 +145,6 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
   const elapsedSec = game ? Math.floor((nowMs - game.turnStartedAt) / 1000) : 0;
   const remainingSec = Math.max(0, turnSeconds - elapsedSec);
 
-  // Auto-timeout when active player's clock hits 0
   useEffect(() => {
     if (
       room?.status === 'playing' &&
@@ -153,7 +185,6 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
 
   const myRoster = mySide && rosters ? rosters[mySide] ?? {} : {};
 
-  // Compute eliminated pieces
   const { myEliminatedRanks, oppEliminatedCount } = useMemo(() => {
     if (!game || !mySide) return { myEliminatedRanks: [] as RankId[], oppEliminatedCount: 0 };
     const aliveIds = new Set(Object.values(game.board ?? {}).map((p) => p.id));
@@ -181,23 +212,25 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
 
   if (!room) {
     return (
-      <div className="min-h-[100dvh] bg-[#161512] flex items-center justify-center p-4 text-sm text-[#a8a29e]">
-        Loading room #{roomId}...
+      <div className="min-h-[100dvh] bg-[#1e1a24] flex items-center justify-center p-4 text-sm text-[#a8a29e] uppercase">
+        LOADING ROOM #{roomId}...
       </div>
     );
   }
 
   if (!mySide) {
     return (
-      <div className="min-h-[100dvh] bg-[#161512] flex flex-col items-center justify-center p-4 gap-4 text-center">
-        <p className="text-base font-bold text-[#e04f4f]">Room Full or Access Denied</p>
-        <p className="text-xs text-[#a8a29e]">Only 2 players can join a match.</p>
-        <button
-          onClick={onLeave}
-          className="px-4 py-2 rounded-xl bg-[#302e2b] text-sm font-semibold cursor-pointer"
-        >
-          Back to Lobby
-        </button>
+      <div className="min-h-[100dvh] bg-[#1e1a24] flex flex-col items-center justify-center p-4 gap-4 text-center">
+        <div className="pixel-panel p-6 space-y-3 max-w-xs">
+          <p className="text-base font-black text-[#e04f4f] uppercase">Room Full</p>
+          <p className="text-xs text-[#a8a29e]">ONLY 2 PLAYERS CAN JOIN A MATCH.</p>
+          <button
+            onClick={onLeave}
+            className="pixel-btn w-full py-2.5 bg-[#3a3244] text-xs font-bold uppercase cursor-pointer"
+          >
+            Back to Lobby
+          </button>
+        </div>
       </div>
     );
   }
@@ -208,29 +241,29 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
   // --- WAITING FOR OPPONENT ---
   if (room.status === 'waiting') {
     return (
-      <div className="min-h-[100dvh] bg-[#161512] flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-[400px] bg-[#262421] border border-[#3a3835] rounded-2xl p-6 text-center space-y-4">
-          <div className="w-12 h-12 mx-auto rounded-xl bg-[#81b64c]/20 border border-[#81b64c] flex items-center justify-center text-2xl">
+      <div className="min-h-[100dvh] bg-[#1e1a24] flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-[400px] pixel-panel p-6 text-center space-y-4">
+          <div className="w-12 h-12 mx-auto pixel-btn bg-[#d9843b] flex items-center justify-center text-2xl text-[#0f0d13]">
             ⚑
           </div>
           <div>
-            <h2 className="text-lg font-bold">Waiting for Challenger...</h2>
+            <h2 className="text-base font-black uppercase">Waiting for Challenger...</h2>
             <p className="text-xs text-[#a8a29e] mt-1">
-              Room <span className="font-mono font-bold text-[#f5f5f4]">#{room.code}</span> •{' '}
-              {room.turnSeconds}s/turn • 1/2 Players
+              ROOM <span className="font-bold text-[#6ee74b]">#{room.code}</span> •{' '}
+              {room.turnSeconds}S/TURN • 1/2
             </p>
           </div>
           <button
             onClick={() => void handleCopyShare()}
-            className="w-full py-3 rounded-xl bg-[#81b64c] text-[#161512] font-bold text-sm cursor-pointer hover:bg-[#92c65d]"
+            className="pixel-btn w-full py-3 bg-[#6ee74b] text-[#0f0d13] font-black text-xs uppercase cursor-pointer"
           >
-            {copied ? '✓ Invite Link Copied!' : '🔗 Copy Shareable Invite Link'}
+            {copied ? '✓ INVITE LINK COPIED!' : '🔗 COPY INVITE LINK'}
           </button>
           <button
             onClick={onLeave}
-            className="w-full py-2.5 rounded-xl bg-[#302e2b] text-xs font-semibold text-[#d6d3d1] border border-[#3a3835] cursor-pointer"
+            className="pixel-btn w-full py-2.5 bg-[#3a3244] text-xs font-bold text-[#d6d3d1] uppercase cursor-pointer"
           >
-            Leave Room
+            LEAVE ROOM
           </button>
         </div>
       </div>
@@ -271,7 +304,6 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
     };
 
     const handleSavePreset = () => {
-      // Save relative to setup row index 0..2 so preset works on either side
       const minRow = Math.min(...getSetupRows(mySide));
       const rel: Record<string, RankId> = {};
       for (const [coord, p] of Object.entries(setupMap)) {
@@ -279,14 +311,14 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
         rel[`${r - minRow},${c}`] = p.rank;
       }
       localStorage.setItem(PRESET_KEY, JSON.stringify(rel));
-      setError('Formation preset saved!');
+      setError('PRESET SAVED!');
       setTimeout(() => setError(null), 1800);
     };
 
     const handleLoadPreset = () => {
       const raw = localStorage.getItem(PRESET_KEY);
       if (!raw) {
-        setError('No saved preset found yet.');
+        setError('NO SAVED PRESET YET.');
         return;
       }
       const rel = JSON.parse(raw) as Record<string, RankId>;
@@ -318,44 +350,44 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
     };
 
     return (
-      <div className="h-[100dvh] bg-[#161512] flex flex-col items-center justify-between p-3 overflow-hidden">
+      <div className="h-[100dvh] bg-[#1e1a24] flex flex-col items-center justify-between p-2.5 overflow-hidden">
         <div className="w-full max-w-[460px] flex-1 flex flex-col justify-between">
           {/* Top info */}
-          <div className="bg-[#262421] rounded-xl px-3 py-2 flex items-center justify-between border border-[#3a3835]">
+          <div className="pixel-panel px-3 py-2 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold">
-                Room #{room.code} • You are <span className="uppercase">{mySide}</span>
+              <p className="text-xs font-black uppercase">
+                ROOM #{room.code} • YOU: WHITE
               </p>
               <p className="text-xs text-[#a8a29e]">
-                {opp?.name ?? 'Opponent'}:{' '}
-                <span className={opp?.ready ? 'text-[#81b64c] font-semibold' : 'text-[#f59e0b]'}>
-                  {opp?.ready ? 'Ready!' : 'Setting up...'}
+                {opp?.name ?? 'OPPONENT'}:{' '}
+                <span className={opp?.ready ? 'text-[#6ee74b] font-bold' : 'text-[#f59e0b] font-bold'}>
+                  {opp?.ready ? 'READY!' : 'SETTING UP...'}
                 </span>
               </p>
             </div>
             <button
               onClick={() => void handleCopyShare()}
-              className="px-2.5 py-1.5 rounded-lg bg-[#302e2b] text-xs text-[#d6d3d1] border border-[#3a3835] cursor-pointer"
+              className="pixel-btn px-2.5 py-1.5 bg-[#3a3244] text-xs font-bold text-[#f5f5f4] cursor-pointer"
             >
-              {copied ? 'Copied!' : '🔗 Share'}
+              {copied ? 'COPIED!' : '🔗 SHARE'}
             </button>
           </div>
 
           {error && (
-            <div className="bg-[#262421] border border-[#81b64c] rounded-lg px-3 py-1.5 text-center text-xs text-[#f5f5f4]">
+            <div className="bg-[#2c2633] border-2 border-[#6ee74b] px-3 py-1 text-center text-xs font-bold text-[#6ee74b]">
               {error}
             </div>
           )}
 
           {/* Setup Board */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <div className="flex items-center justify-between px-1">
-              <span className="text-xs font-semibold text-[#81b64c]">
-                Arrange 21 Pieces (6 vacant squares)
+              <span className="text-xs font-bold text-[#6ee74b] uppercase">
+                Setup 21 Pieces (6 Vacant)
               </span>
-              <span className="text-xs text-[#a8a29e]">Tap 2 squares to swap</span>
+              <span className="text-xs text-[#a8a29e]">TAP 2 TO SWAP</span>
             </div>
-            <div className="grid grid-cols-9 aspect-[9/8] w-full rounded-lg overflow-hidden border-2 border-[#3a3835] board-shadow">
+            <PixelBoardFrame>
               {displayRows.map((r) =>
                 displayCols.map((c) => {
                   const coord = formatCoord(r, c);
@@ -372,24 +404,24 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
                       onClick={() => handleSetupCellClick(coord)}
                       aria-label={`Row ${r + 1} Col ${c + 1}`}
                       className={`relative flex items-center justify-center ${
-                        isLight ? 'wood-sq-light' : 'wood-sq-dark'
-                      } ${!isMyZone ? 'opacity-50' : 'cursor-pointer'} ${
-                        isSelected ? 'ring-2 ring-inset ring-[#fbbf24]' : ''
+                        isLight ? 'pixel-sq-light' : 'pixel-sq-dark'
+                      } ${!isMyZone ? 'opacity-55' : 'cursor-pointer'} ${
+                        isSelected ? 'ring-2 ring-inset ring-[#6ee74b]' : ''
                       }`}
                     >
-                      {isMyZone && piece && <PieceTile rank={piece.rank} side={mySide} />}
+                      {isMyZone && piece && <PieceTile rank={piece.rank} side="white" />}
                       {isOppZone && oppSide && (r * 9 + c) % 4 !== 0 && (
-                        <PieceTile side={oppSide} hidden />
+                        <PieceTile side="black" hidden />
                       )}
                     </button>
                   );
                 }),
               )}
-            </div>
+            </PixelBoardFrame>
           </div>
 
           {/* Setup Controls */}
-          <div className="bg-[#262421] rounded-xl p-3 border border-[#3a3835] space-y-2">
+          <div className="pixel-panel p-2.5 space-y-2">
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
@@ -398,34 +430,34 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
                   setSetupMap(createRandomSetup(mySide).boardCoords);
                   setSetupSelected(null);
                 }}
-                className="py-2 rounded-xl bg-[#302e2b] border border-[#3a3835] text-xs font-semibold disabled:opacity-40 cursor-pointer"
+                className="pixel-btn py-2 bg-[#3a3244] text-xs font-bold uppercase disabled:opacity-40 cursor-pointer"
               >
-                🎲 Random
+                🎲 RANDOM
               </button>
               <button
                 type="button"
                 disabled={me.ready}
                 onClick={handleSavePreset}
-                className="py-2 rounded-xl bg-[#302e2b] border border-[#3a3835] text-xs font-semibold disabled:opacity-40 cursor-pointer"
+                className="pixel-btn py-2 bg-[#3a3244] text-xs font-bold uppercase disabled:opacity-40 cursor-pointer"
               >
-                💾 Save
+                💾 SAVE
               </button>
               <button
                 type="button"
                 disabled={me.ready}
                 onClick={handleLoadPreset}
-                className="py-2 rounded-xl bg-[#302e2b] border border-[#3a3835] text-xs font-semibold disabled:opacity-40 cursor-pointer"
+                className="pixel-btn py-2 bg-[#3a3244] text-xs font-bold uppercase disabled:opacity-40 cursor-pointer"
               >
-                📂 Load
+                📂 LOAD
               </button>
             </div>
             <button
               type="button"
               disabled={me.ready || submittingSetup}
               onClick={() => void handleReady()}
-              className="w-full py-3 rounded-xl bg-[#81b64c] hover:bg-[#92c65d] disabled:opacity-50 text-[#161512] font-bold text-sm shadow cursor-pointer"
+              className="pixel-btn w-full py-2.5 bg-[#6ee74b] disabled:opacity-50 text-[#0f0d13] font-black text-sm uppercase cursor-pointer"
             >
-              {me.ready ? '⏳ Waiting for Opponent...' : '✓ Ready for Battle'}
+              {me.ready ? '⏳ WAITING FOR OPPONENT...' : '✓ READY FOR BATTLE'}
             </button>
           </div>
         </div>
@@ -461,64 +493,58 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
   };
 
   const getArbiterText = (): string => {
-    if (!game) return 'Starting match...';
+    if (!game) return 'STARTING MATCH...';
     if (game.winner) {
-      if (game.winner === 'draw') return 'Game Drawn by mutual agreement.';
-      return game.winner === mySide ? '🏆 Victory! All pieces revealed.' : 'Defeat — All pieces revealed.';
+      if (game.winner === 'draw') return 'GAME DRAWN BY AGREEMENT.';
+      return game.winner === mySide ? '🏆 VICTORY! ALL PIECES REVEALED.' : 'DEFEAT — ALL PIECES REVEALED.';
     }
     if (game.flagAtBackRank?.mustSurviveTurn) {
       return game.flagAtBackRank.side === mySide
-        ? '⚑ Your Flag reached the end! Must survive 1 opponent turn!'
-        : '⚠️ Enemy Flag reached your back rank! Capture it now or lose!';
+        ? '⚑ FLAG AT END! SURVIVE 1 TURN TO WIN!'
+        : '⚠️ ENEMY FLAG AT BACK RANK! CAPTURE NOW!';
     }
     if (game.lastMove?.hadChallenge) {
       const out = game.lastMove.outcome;
       const attackerWasMe = game.lastMove.by === mySide;
-      if (out === 'both') return '⚔️ Challenge! Equal ranks — both pieces eliminated.';
+      if (out === 'both') return '⚔️ CHALLENGE! EQUAL RANKS — BOTH OUT.';
       if ((out === 'attacker' && attackerWasMe) || (out === 'defender' && !attackerWasMe)) {
-        return '⚔️ Challenge Won! Opponent piece eliminated.';
+        return '⚔️ CHALLENGE WON! ENEMY ELIMINATED.';
       }
-      return '⚔️ Challenge Lost! Your piece was eliminated.';
+      return '⚔️ CHALLENGE LOST! YOUR PIECE OUT.';
     }
-    return isMyTurn ? 'Your Turn — Tap a piece to move' : `${opp?.name ?? 'Opponent'}'s Turn...`;
+    return isMyTurn ? 'YOUR TURN — SELECT A WHITE PIECE' : `${opp?.name ?? 'OPPONENT'}'S TURN...`;
   };
 
   return (
-    <div className="h-[100dvh] bg-[#161512] flex flex-col items-center p-2.5 overflow-hidden">
+    <div className="h-[100dvh] bg-[#1e1a24] flex flex-col items-center p-2 overflow-hidden">
       <div className="w-full max-w-[460px] flex-1 flex flex-col justify-between relative">
         {/* Opponent Bar */}
         <div
-          className={`bg-[#262421] rounded-xl px-3 py-2 flex items-center justify-between border ${
-            game?.turn === oppSide && !game?.winner ? 'border-[#81b64c]/60' : 'border-[#3a3835]'
+          className={`pixel-panel px-3 py-1.5 flex items-center justify-between ${
+            game?.turn === oppSide && !game?.winner ? 'border-[#6ee74b]' : ''
           }`}
         >
           <div className="flex items-center gap-2.5">
-            <div
-              className={`w-8 h-8 rounded-lg border flex items-center justify-center text-xs font-bold ${
-                oppSide === 'white'
-                  ? 'bg-[#f8fafc] text-[#111827] border-[#cbd5e1]'
-                  : 'bg-[#18181b] text-[#f8fafc] border-[#52525b]'
-              }`}
-            >
-              {oppSide === 'white' ? 'W' : 'B'}
+            <div className="w-8 h-8 border-2 border-[#0f0d13] bg-[#18181b] text-[#f8fafc] flex items-center justify-center text-xs font-black">
+              BLK
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-sm font-semibold">{opp?.name ?? 'Opponent'}</span>
+                <span className="text-xs font-black uppercase">{opp?.name ?? 'OPPONENT'}</span>
                 <span
-                  className={`w-2 h-2 rounded-full ${
-                    opp?.connected ? 'bg-[#81b64c]' : 'bg-[#f59e0b]'
+                  className={`w-2 h-2 border border-[#0f0d13] ${
+                    opp?.connected ? 'bg-[#6ee74b]' : 'bg-[#f59e0b]'
                   }`}
                 />
               </div>
-              <p className="text-xs text-[#a8a29e]">Lost: {oppEliminatedCount} pieces</p>
+              <p className="text-xs text-[#a8a29e]">LOST: {oppEliminatedCount}</p>
             </div>
           </div>
           <div
-            className={`px-3 py-1.5 rounded-lg text-sm font-bold tabular-nums border ${
+            className={`px-2.5 py-1 border-2 border-[#0f0d13] text-sm font-black tabular-nums ${
               game?.turn === oppSide && !game?.winner
-                ? 'bg-[#81b64c] text-[#161512] border-[#81b64c]'
-                : 'bg-[#161512] text-[#a8a29e] border-[#3a3835]'
+                ? 'bg-[#6ee74b] text-[#0f0d13]'
+                : 'bg-[#16131b] text-[#a8a29e]'
             }`}
           >
             {formatClock(oppTime)}
@@ -527,8 +553,8 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
 
         {/* Draw Offer or Arbiter Banner */}
         {game?.drawOfferBy && game.drawOfferBy === oppSide && !game.winner ? (
-          <div className="mx-1 px-3 py-1.5 rounded-lg bg-[#f59e0b]/20 border border-[#f59e0b] flex items-center justify-between text-xs">
-            <span>Opponent offers a Draw</span>
+          <div className="px-3 py-1.5 bg-[#d9843b] border-2 border-[#0f0d13] text-[#0f0d13] flex items-center justify-between text-xs font-black">
+            <span>DRAW OFFERED!</span>
             <div className="flex gap-2">
               <button
                 onClick={() =>
@@ -541,26 +567,26 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
                     winReason: 'draw',
                   })
                 }
-                className="px-2 py-0.5 rounded bg-[#81b64c] text-[#161512] font-bold cursor-pointer"
+                className="pixel-btn px-2 py-0.5 bg-[#6ee74b] text-[#0f0d13] cursor-pointer"
               >
-                Accept
+                ACCEPT
               </button>
               <button
                 onClick={() => void declineDraw(roomId)}
-                className="px-2 py-0.5 rounded bg-[#302e2b] text-[#f5f5f4] cursor-pointer"
+                className="pixel-btn px-2 py-0.5 bg-[#2c2633] text-[#f5f5f4] cursor-pointer"
               >
-                Decline
+                NO
               </button>
             </div>
           </div>
         ) : (
-          <div className="mx-1 px-3 py-1.5 rounded-lg bg-[#262421] border border-[#3a3835] text-center text-xs text-[#d6d3d1]">
+          <div className="px-2.5 py-1 bg-[#16131b] border-2 border-[#0f0d13] text-center text-xs font-bold text-[#c2d6cc]">
             {error ?? getArbiterText()}
           </div>
         )}
 
-        {/* 9x8 Red-Wood Board */}
-        <div className="grid grid-cols-9 aspect-[9/8] w-full rounded-lg overflow-hidden border-2 border-[#3a3835] board-shadow">
+        {/* 9x8 8-Bit Retro Board */}
+        <PixelBoardFrame>
           {displayRows.map((r) =>
             displayCols.map((c) => {
               const coord = formatCoord(r, c);
@@ -568,6 +594,7 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
               const piece = game?.board?.[coord];
               const isSelected = selectedCoord === coord;
               const isTarget = legalTargets.has(coord);
+              const isThreat = Boolean(piece && isTarget);
               const isLast = game?.lastMove?.from === coord || game?.lastMove?.to === coord;
 
               const rank =
@@ -582,119 +609,111 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
                   onClick={() => void handleBoardClick(coord)}
                   aria-label={`Row ${r + 1} Col ${c + 1}`}
                   className={`relative flex items-center justify-center cursor-pointer ${
-                    isLight ? 'wood-sq-light' : 'wood-sq-dark'
-                  } ${isLast ? 'ring-1 ring-inset ring-[#81b64c]/70' : ''} ${
-                    isSelected ? 'ring-2 ring-inset ring-[#fbbf24]' : ''
+                    isThreat
+                      ? 'pixel-sq-threat'
+                      : isLight
+                        ? 'pixel-sq-light'
+                        : 'pixel-sq-dark'
+                  } ${isLast ? 'ring-2 ring-inset ring-[#d9843b]' : ''} ${
+                    isSelected ? 'ring-2 ring-inset ring-[#6ee74b]' : ''
                   }`}
                 >
                   {piece ? (
-                    <div
-                      className={`w-full h-full flex items-center justify-center ${
-                        isTarget ? 'ring-2 ring-inset ring-[#fbbf24]' : ''
-                      }`}
-                    >
-                      <PieceTile
-                        side={piece.side}
-                        rank={rank}
-                        hidden={piece.side !== mySide && !piece.revealedRank}
-                      />
-                    </div>
+                    <PieceTile
+                      side={piece.side === mySide ? 'white' : 'black'}
+                      rank={rank}
+                      hidden={piece.side !== mySide && !piece.revealedRank}
+                    />
                   ) : isTarget ? (
-                    <span className="w-3.5 h-3.5 rounded-full bg-[#fbbf24]/75 ring-2 ring-[#161512]/50" />
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#6ee74b] border-2 border-[#0f0d13]" />
                   ) : null}
                 </button>
               );
             }),
           )}
-        </div>
+        </PixelBoardFrame>
 
         {/* Player Bar */}
         <div
-          className={`bg-[#262421] rounded-xl px-3 py-2 flex items-center justify-between border ${
-            isMyTurn ? 'border-[#81b64c]' : 'border-[#3a3835]'
+          className={`pixel-panel px-3 py-1.5 flex items-center justify-between ${
+            isMyTurn ? 'border-[#6ee74b]' : ''
           }`}
         >
           <div className="flex items-center gap-2.5">
-            <div
-              className={`w-8 h-8 rounded-lg border flex items-center justify-center text-xs font-bold ${
-                mySide === 'white'
-                  ? 'bg-[#f8fafc] text-[#111827] border-[#cbd5e1]'
-                  : 'bg-[#18181b] text-[#f8fafc] border-[#52525b]'
-              }`}
-            >
-              {mySide === 'white' ? 'W' : 'B'}
+            <div className="w-8 h-8 border-2 border-[#0f0d13] bg-[#f8fafc] text-[#0f0d13] flex items-center justify-center text-xs font-black">
+              WHT
             </div>
             <div>
-              <span className="text-sm font-semibold">{me.name} (You)</span>
-              <p className="text-xs text-[#a8a29e]">Lost: {myEliminatedRanks.length} pieces</p>
+              <span className="text-xs font-black uppercase">{me.name} (YOU)</span>
+              <p className="text-xs text-[#a8a29e]">LOST: {myEliminatedRanks.length}</p>
             </div>
           </div>
           <div
-            className={`px-3 py-1.5 rounded-lg text-sm font-extrabold tabular-nums border ${
+            className={`px-2.5 py-1 border-2 border-[#0f0d13] text-sm font-black tabular-nums ${
               isMyTurn
                 ? myTime <= 10
-                  ? 'bg-[#e04f4f] text-white border-[#e04f4f]'
-                  : 'bg-[#81b64c] text-[#161512] border-[#81b64c]'
-                : 'bg-[#161512] text-[#a8a29e] border-[#3a3835]'
+                  ? 'bg-[#e04f4f] text-white'
+                  : 'bg-[#6ee74b] text-[#0f0d13]'
+                : 'bg-[#16131b] text-[#a8a29e]'
             }`}
           >
             {formatClock(myTime)}
           </div>
         </div>
 
-        {/* Action Strip */}
-        <div className="grid grid-cols-4 gap-2">
+        {/* 8-Bit Action Strip */}
+        <div className="grid grid-cols-4 gap-1.5">
           <button
             type="button"
             disabled={Boolean(game?.winner)}
             onClick={() => setShowResignConfirm(true)}
-            className="py-2 rounded-xl bg-[#262421] border border-[#3a3835] text-xs font-medium text-[#e04f4f] disabled:opacity-40 cursor-pointer"
+            className="pixel-btn py-2 bg-[#991b1b] text-xs font-black text-white uppercase disabled:opacity-40 cursor-pointer"
           >
-            🏳 Resign
+            🏳 RESIGN
           </button>
           <button
             type="button"
             disabled={Boolean(game?.winner) || game?.drawOfferBy === mySide}
             onClick={() => void offerDraw(roomId, mySide)}
-            className="py-2 rounded-xl bg-[#262421] border border-[#3a3835] text-xs font-medium text-[#d6d3d1] disabled:opacity-40 cursor-pointer"
+            className="pixel-btn py-2 bg-[#3a3244] text-xs font-bold text-[#f5f5f4] uppercase disabled:opacity-40 cursor-pointer"
           >
-            {game?.drawOfferBy === mySide ? 'Offered' : '½ Draw'}
+            {game?.drawOfferBy === mySide ? 'SENT' : '½ DRAW'}
           </button>
           <button
             type="button"
             onClick={() => setMuted((m) => !m)}
-            className="py-2 rounded-xl bg-[#262421] border border-[#3a3835] text-xs font-medium text-[#d6d3d1] cursor-pointer"
+            className="pixel-btn py-2 bg-[#3a3244] text-xs font-bold text-[#f5f5f4] uppercase cursor-pointer"
           >
-            {muted ? '🔇 Muted' : '🔊 Sound'}
+            {muted ? '🔇 MUTE' : '🔊 SFX'}
           </button>
           <button
             type="button"
             onClick={() => setShowGraveyard((v) => !v)}
-            className="py-2 rounded-xl bg-[#262421] border border-[#3a3835] text-xs font-medium text-[#d6d3d1] cursor-pointer"
+            className="pixel-btn py-2 bg-[#3a3244] text-xs font-bold text-[#f5f5f4] uppercase cursor-pointer"
           >
-            🪦 Lost ({myEliminatedRanks.length})
+            🪦 LOST ({myEliminatedRanks.length})
           </button>
         </div>
 
         {/* Graveyard Drawer */}
         {showGraveyard && (
-          <div className="absolute inset-x-0 bottom-14 bg-[#262421] border border-[#3a3835] rounded-2xl p-3 shadow-2xl z-20 space-y-2">
+          <div className="absolute inset-x-0 bottom-12 pixel-panel p-3 z-20 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold">Your Eliminated Pieces</span>
+              <span className="text-xs font-black uppercase">Your Eliminated Pieces</span>
               <button
                 onClick={() => setShowGraveyard(false)}
-                className="text-xs text-[#a8a29e] cursor-pointer"
+                className="text-xs font-bold text-[#d9843b] cursor-pointer"
               >
-                ✕ Close
+                [X] CLOSE
               </button>
             </div>
             {myEliminatedRanks.length === 0 ? (
-              <p className="text-xs text-[#a8a29e]">None of your soldiers have been eliminated yet.</p>
+              <p className="text-xs text-[#a8a29e]">NO SOLDIERS ELIMINATED YET.</p>
             ) : (
               <div className="flex flex-wrap gap-1.5">
                 {myEliminatedRanks.map((rank, i) => (
-                  <div key={`${rank}-${i}`} className="w-9 h-8">
-                    <PieceTile rank={rank} side={mySide} />
+                  <div key={`${rank}-${i}`} className="w-10 h-10">
+                    <PieceTile rank={rank} side="white" />
                   </div>
                 ))}
               </div>
@@ -704,18 +723,18 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
 
         {/* Resign Confirm Modal */}
         {showResignConfirm && game && rosters && (
-          <div className="absolute inset-0 bg-[#161512]/80 flex items-center justify-center p-4 z-30">
-            <div className="w-full max-w-[320px] bg-[#262421] border border-[#3a3835] rounded-2xl p-5 text-center space-y-4">
-              <h3 className="text-base font-bold">Resign Match?</h3>
+          <div className="absolute inset-0 bg-[#0f0d13]/85 flex items-center justify-center p-4 z-30">
+            <div className="w-full max-w-[320px] pixel-panel p-5 text-center space-y-4">
+              <h3 className="text-base font-black uppercase">Resign Match?</h3>
               <p className="text-xs text-[#a8a29e]">
-                Your opponent will win the game and all pieces will be revealed.
+                OPPONENT WINS AND ALL PIECES ARE REVEALED.
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowResignConfirm(false)}
-                  className="flex-1 py-2.5 rounded-xl bg-[#302e2b] text-xs font-semibold cursor-pointer"
+                  className="pixel-btn flex-1 py-2.5 bg-[#3a3244] text-xs font-bold uppercase cursor-pointer"
                 >
-                  Cancel
+                  CANCEL
                 </button>
                 <button
                   onClick={() => {
@@ -730,9 +749,9 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
                       });
                     }
                   }}
-                  className="flex-1 py-2.5 rounded-xl bg-[#e04f4f] text-white text-xs font-bold cursor-pointer"
+                  className="pixel-btn flex-1 py-2.5 bg-[#e04f4f] text-white text-xs font-black uppercase cursor-pointer"
                 >
-                  Resign
+                  RESIGN
                 </button>
               </div>
             </div>
@@ -741,16 +760,16 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
 
         {/* Endgame Modal */}
         {game?.winner && !hideEndModal && (
-          <div className="absolute inset-0 bg-[#161512]/85 flex items-center justify-center p-4 z-30">
-            <div className="w-full max-w-[340px] bg-[#262421] border border-[#81b64c] rounded-2xl p-5 text-center space-y-4 shadow-2xl">
+          <div className="absolute inset-0 bg-[#0f0d13]/85 flex items-center justify-center p-4 z-30">
+            <div className="w-full max-w-[340px] pixel-panel p-5 text-center space-y-4">
               <div className="text-3xl">
                 {game.winner === 'draw' ? '🤝' : game.winner === mySide ? '🏆' : '🏳️'}
               </div>
               <div>
                 <h2
-                  className={`text-xl font-extrabold ${
+                  className={`text-xl font-black uppercase ${
                     game.winner === mySide
-                      ? 'text-[#81b64c]'
+                      ? 'text-[#6ee74b]'
                       : game.winner === 'draw'
                         ? 'text-[#f59e0b]'
                         : 'text-[#e04f4f]'
@@ -762,28 +781,28 @@ export const GamePage: React.FC<GamePageProps> = ({ roomId, uid, onLeave }) => {
                       ? 'VICTORY!'
                       : 'DEFEAT'}
                 </h2>
-                <p className="text-xs text-[#d6d3d1] mt-1">
-                  Reason: {game.winReason?.replace(/-/g, ' ')} • {game.moveCount} moves
+                <p className="text-xs text-[#d6d3d1] mt-1 uppercase">
+                  {game.winReason?.replace(/-/g, ' ')} • {game.moveCount} MOVES
                 </p>
               </div>
               <div className="space-y-2">
                 <button
                   onClick={() => void requestRematch(roomId)}
-                  className="w-full py-2.5 rounded-xl bg-[#81b64c] text-[#161512] font-bold text-sm cursor-pointer"
+                  className="pixel-btn w-full py-2.5 bg-[#6ee74b] text-[#0f0d13] font-black text-sm uppercase cursor-pointer"
                 >
-                  ↻ Rematch
+                  ↻ REMATCH
                 </button>
                 <button
                   onClick={() => setHideEndModal(true)}
-                  className="w-full py-2 rounded-xl bg-[#302e2b] text-xs font-semibold text-[#d6d3d1] border border-[#3a3835] cursor-pointer"
+                  className="pixel-btn w-full py-2 bg-[#3a3244] text-xs font-bold text-[#f5f5f4] uppercase cursor-pointer"
                 >
-                  Inspect Revealed Board
+                  INSPECT BOARD
                 </button>
                 <button
                   onClick={onLeave}
-                  className="w-full py-2 rounded-xl bg-transparent text-xs text-[#a8a29e] cursor-pointer"
+                  className="w-full py-2 text-xs font-bold text-[#a8a29e] uppercase cursor-pointer"
                 >
-                  Back to Lobby
+                  BACK TO LOBBY
                 </button>
               </div>
             </div>

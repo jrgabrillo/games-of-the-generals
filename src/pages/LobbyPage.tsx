@@ -29,14 +29,14 @@ export const LobbyPage: React.FC<LobbyPageProps> = ({
 
   const handleRandomName = () => {
     const num = Math.floor(100 + Math.random() * 900);
-    onNameChange(`General-${num}`);
+    onNameChange(`GEN-${num}`);
   };
 
   const handleCreate = async () => {
     setError(null);
     setBusy(true);
     try {
-      const displayName = name.trim() || 'General';
+      const displayName = name.trim() || 'GENERAL';
       const { roomId } = await createRoom({
         uid,
         name: displayName,
@@ -56,7 +56,7 @@ export const LobbyPage: React.FC<LobbyPageProps> = ({
     setError(null);
     setBusy(true);
     try {
-      const displayName = name.trim() || 'General';
+      const displayName = name.trim() || 'GENERAL';
       const room = await joinRoom({
         roomIdOrCode: code,
         uid,
@@ -71,45 +71,42 @@ export const LobbyPage: React.FC<LobbyPageProps> = ({
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#161512] text-[#f5f5f4] flex flex-col items-center p-4">
+    <div className="min-h-[100dvh] bg-[#1e1a24] text-[#f5f5f4] flex flex-col items-center p-4">
       <div className="w-full max-w-[440px] space-y-4">
-        {/* Header */}
+        {/* 8-Bit Header */}
         <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-[#81b64c] flex items-center justify-center text-[#161512] font-black text-lg shadow">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 pixel-btn bg-[#d9843b] flex items-center justify-center text-[#0f0d13] font-black text-xl">
               ⚑
             </div>
             <div>
-              <h1 className="text-lg font-bold leading-tight">Games of the Generals</h1>
-              <p className="text-xs text-[#a8a29e]">Free-to-play • No login required</p>
+              <h1 className="text-base font-black uppercase tracking-wide leading-tight">
+                Games of the Generals
+              </h1>
+              <p className="text-xs text-[#a8a29e]">8-BIT SALPAKAN • NO LOGIN</p>
             </div>
           </div>
           <span
-            className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
+            className={`px-2 py-1 text-xs font-bold border-2 border-[#0f0d13] ${
               isFirebaseConfigured
-                ? 'bg-[#262421] border-[#3a3835] text-[#81b64c]'
-                : 'bg-[#262421] border-[#f59e0b]/40 text-[#f59e0b]'
+                ? 'bg-[#2c2633] text-[#6ee74b]'
+                : 'bg-[#2c2633] text-[#f59e0b]'
             }`}
-            title={
-              isFirebaseConfigured
-                ? 'Connected to Firebase Realtime Database'
-                : 'No Firebase .env found — running Local 2-Tab Broadcast Mode'
-            }
           >
-            {isFirebaseConfigured ? '● RTDB Live' : '● Local 2-Tab'}
+            {isFirebaseConfigured ? '● LIVE' : '● LOCAL'}
           </span>
         </div>
 
         {error && (
-          <div className="bg-[#e04f4f]/15 border border-[#e04f4f] text-[#fecaca] rounded-xl px-3.5 py-2.5 text-xs">
-            {error}
+          <div className="bg-[#991b1b] border-2 border-[#0f0d13] text-[#fecaca] px-3 py-2 text-xs font-bold">
+            ! {error}
           </div>
         )}
 
         {/* Callsign */}
-        <div className="bg-[#262421] rounded-xl p-3.5 border border-[#3a3835] space-y-2">
-          <label htmlFor="callsign" className="block text-xs font-medium text-[#a8a29e]">
-            Your Callsign
+        <div className="pixel-panel p-3.5 space-y-2">
+          <label htmlFor="callsign" className="block text-xs font-bold uppercase text-[#c2d6cc]">
+            Player Callsign
           </label>
           <div className="flex gap-2">
             <input
@@ -118,13 +115,13 @@ export const LobbyPage: React.FC<LobbyPageProps> = ({
               maxLength={20}
               value={name}
               onChange={(e) => onNameChange(e.target.value)}
-              className="flex-1 bg-[#161512] border border-[#3a3835] rounded-lg px-3 py-2 text-sm text-[#f5f5f4] focus:outline-none focus:border-[#81b64c]"
-              placeholder="Enter callsign..."
+              className="flex-1 pixel-input px-3 py-2 text-sm focus:outline-none focus:border-[#6ee74b]"
+              placeholder="ENTER CALLSIGN..."
             />
             <button
               type="button"
               onClick={handleRandomName}
-              className="px-3 py-2 bg-[#302e2b] rounded-lg text-xs font-medium text-[#d6d3d1] hover:bg-[#3c3935] cursor-pointer"
+              className="pixel-btn px-3 py-2 bg-[#3a3244] text-xs font-bold text-[#f5f5f4] cursor-pointer"
               aria-label="Randomize callsign"
             >
               🎲
@@ -133,10 +130,10 @@ export const LobbyPage: React.FC<LobbyPageProps> = ({
         </div>
 
         {/* Create & Broadcast Room */}
-        <div className="bg-[#262421] rounded-xl p-4 border border-[#3a3835] space-y-3">
+        <div className="pixel-panel p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold">Create Match Room</span>
-            <span className="text-xs text-[#a8a29e]">Max 2 Players</span>
+            <span className="text-sm font-black uppercase">Create Match</span>
+            <span className="text-xs text-[#a8a29e]">2 PLAYERS MAX</span>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
@@ -145,13 +142,13 @@ export const LobbyPage: React.FC<LobbyPageProps> = ({
                 key={sec}
                 type="button"
                 onClick={() => setTurnSeconds(sec)}
-                className={`py-2 rounded-lg text-xs font-semibold border transition cursor-pointer ${
+                className={`pixel-btn py-2 text-xs font-bold cursor-pointer ${
                   turnSeconds === sec
-                    ? 'bg-[#81b64c]/20 border-[#81b64c] text-[#81b64c]'
-                    : 'bg-[#302e2b] border-[#3a3835] text-[#d6d3d1]'
+                    ? 'bg-[#6ee74b] text-[#0f0d13]'
+                    : 'bg-[#3a3244] text-[#d6d3d1]'
                 }`}
               >
-                {sec}s / turn
+                {sec}S TURN
               </button>
             ))}
           </div>
@@ -159,15 +156,15 @@ export const LobbyPage: React.FC<LobbyPageProps> = ({
           <button
             type="button"
             onClick={() => setIsPublic((v) => !v)}
-            className="w-full flex items-center justify-between text-xs text-[#d6d3d1] py-1 cursor-pointer"
+            className="w-full flex items-center justify-between text-xs font-bold text-[#d6d3d1] py-1 cursor-pointer"
           >
-            <span>Broadcast in Public Lobby</span>
+            <span>BROADCAST PUBLIC ROOM</span>
             <span
-              className={`px-2 py-0.5 rounded font-bold ${
-                isPublic ? 'bg-[#81b64c] text-[#161512]' : 'bg-[#302e2b] text-[#a8a29e]'
+              className={`px-2 py-0.5 border-2 border-[#0f0d13] font-black ${
+                isPublic ? 'bg-[#6ee74b] text-[#0f0d13]' : 'bg-[#16131b] text-[#a8a29e]'
               }`}
             >
-              {isPublic ? 'ON' : 'PRIVATE'}
+              {isPublic ? 'ON' : 'OFF'}
             </span>
           </button>
 
@@ -175,9 +172,9 @@ export const LobbyPage: React.FC<LobbyPageProps> = ({
             type="button"
             disabled={busy}
             onClick={handleCreate}
-            className="w-full py-3 rounded-xl bg-[#81b64c] hover:bg-[#92c65d] disabled:opacity-50 text-[#161512] font-bold text-sm shadow transition cursor-pointer"
+            className="pixel-btn w-full py-3 bg-[#6ee74b] hover:bg-[#84f262] disabled:opacity-50 text-[#0f0d13] font-black text-sm uppercase cursor-pointer"
           >
-            {busy ? 'Creating...' : '+ Create & Broadcast Room'}
+            {busy ? 'CREATING...' : '+ CREATE ROOM'}
           </button>
         </div>
 
@@ -193,53 +190,53 @@ export const LobbyPage: React.FC<LobbyPageProps> = ({
             type="text"
             value={joinCode}
             onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-            placeholder="Enter Room Code (e.g. GOTG42)"
-            className="flex-1 bg-[#262421] border border-[#3a3835] rounded-xl px-3 py-2.5 text-sm text-[#f5f5f4] placeholder-[#78716c] focus:outline-none focus:border-[#81b64c]"
+            placeholder="ROOM CODE (E.G. GOTG42)"
+            className="flex-1 pixel-input px-3 py-2.5 text-sm placeholder-[#78716c] focus:outline-none focus:border-[#6ee74b]"
           />
           <button
             type="submit"
             disabled={busy || !joinCode.trim()}
-            className="px-4 py-2.5 rounded-xl bg-[#302e2b] border border-[#3a3835] text-sm font-semibold hover:bg-[#3c3935] disabled:opacity-50 cursor-pointer"
+            className="pixel-btn px-4 py-2.5 bg-[#d9843b] text-[#0f0d13] text-sm font-black uppercase disabled:opacity-50 cursor-pointer"
           >
-            Join
+            JOIN
           </button>
         </form>
 
         {/* Open Rooms List */}
         <div className="space-y-2 pb-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-[#a8a29e]">
+            <h2 className="text-xs font-black uppercase tracking-wider text-[#c2d6cc]">
               Open Rooms (Broadcasted)
             </h2>
-            <span className="text-xs text-[#81b64c]">Live</span>
+            <span className="text-xs font-bold text-[#6ee74b]">LIVE</span>
           </div>
 
           {rooms.length === 0 ? (
-            <div className="bg-[#262421] rounded-xl p-4 border border-[#3a3835] text-center text-xs text-[#a8a29e]">
-              No open public rooms right now. Create one above or open a second tab to test!
+            <div className="pixel-panel p-4 text-center text-xs text-[#a8a29e]">
+              NO OPEN ROOMS YET. CREATE ONE ABOVE!
             </div>
           ) : (
             rooms.map((r) => (
               <div
                 key={r.id}
-                className="bg-[#262421] rounded-xl p-3 border border-[#3a3835] flex items-center justify-between"
+                className="pixel-panel p-3 flex items-center justify-between"
               >
                 <div>
-                  <p className="text-sm font-semibold">
-                    {r.players.white?.name ?? 'Host'}{' '}
-                    <span className="text-xs text-[#a8a29e]">#{r.code}</span>
+                  <p className="text-sm font-bold uppercase">
+                    {r.players.white?.name ?? 'HOST'}{' '}
+                    <span className="text-xs text-[#d9843b]">#{r.code}</span>
                   </p>
                   <p className="text-xs text-[#a8a29e]">
-                    {r.turnSeconds}s/turn • {r.playerCount}/2 players
+                    {r.turnSeconds}S/TURN • {r.playerCount}/2 PLAYERS
                   </p>
                 </div>
                 <button
                   type="button"
                   disabled={busy}
                   onClick={() => void handleJoin(r.id)}
-                  className="px-3.5 py-1.5 rounded-lg bg-[#81b64c] text-[#161512] text-xs font-bold cursor-pointer hover:bg-[#92c65d]"
+                  className="pixel-btn px-3.5 py-1.5 bg-[#6ee74b] text-[#0f0d13] text-xs font-black uppercase cursor-pointer"
                 >
-                  Challenge
+                  FIGHT
                 </button>
               </div>
             ))

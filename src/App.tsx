@@ -74,9 +74,9 @@ export const App: React.FC = () => {
 
   if (authError) {
     return (
-      <div className="min-h-[100dvh] bg-[#161512] flex items-center justify-center p-6 text-center">
-        <div className="max-w-sm bg-[#262421] border border-[#e04f4f] rounded-2xl p-5 space-y-2">
-          <p className="text-sm font-bold text-[#e04f4f]">Firebase Auth Setup Needed</p>
+      <div className="min-h-[100dvh] bg-[#1e1a24] flex items-center justify-center p-6 text-center">
+        <div className="max-w-sm pixel-panel p-5 space-y-2">
+          <p className="text-sm font-bold text-[#e04f4f] uppercase">Firebase Auth Setup Needed</p>
           <p className="text-xs text-[#d6d3d1]">{authError}</p>
         </div>
       </div>
@@ -85,8 +85,8 @@ export const App: React.FC = () => {
 
   if (!uid || joiningUrl) {
     return (
-      <div className="min-h-[100dvh] bg-[#161512] flex items-center justify-center text-sm text-[#a8a29e]">
-        {joiningUrl ? 'Joining room...' : 'Initializing session...'}
+      <div className="min-h-[100dvh] bg-[#1e1a24] flex items-center justify-center text-sm text-[#a8a29e] uppercase tracking-wider">
+        {joiningUrl ? 'JOINING ROOM...' : 'INITIALIZING...'}
       </div>
     );
   }
