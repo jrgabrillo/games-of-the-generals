@@ -4,6 +4,7 @@ import { ensureAnonymousSession } from './lib/firebase';
 import { GamePage } from './pages/GamePage';
 import { HowToPlayPage } from './pages/HowToPlayPage';
 import { LobbyPage } from './pages/LobbyPage';
+import { PracticePage } from './pages/PracticePage';
 
 const NAME_KEY = 'gotg_callsign';
 
@@ -18,6 +19,7 @@ export const App: React.FC = () => {
   });
   const [roomId, setRoomId] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(false);
+  const [showPractice, setShowPractice] = useState(false);
   const [joiningUrl, setJoiningUrl] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -101,6 +103,10 @@ export const App: React.FC = () => {
     return <HowToPlayPage onBack={() => setShowGuide(false)} />;
   }
 
+  if (showPractice) {
+    return <PracticePage playerName={name} onBack={() => setShowPractice(false)} />;
+  }
+
   return (
     <LobbyPage
       uid={uid}
@@ -108,6 +114,7 @@ export const App: React.FC = () => {
       onNameChange={handleNameChange}
       onEnterRoom={handleEnterRoom}
       onOpenGuide={() => setShowGuide(true)}
+      onOpenPractice={() => setShowPractice(true)}
     />
   );
 };
