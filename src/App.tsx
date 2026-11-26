@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { joinRoom } from './api/roomService';
 import { ensureAnonymousSession } from './lib/firebase';
 import { GamePage } from './pages/GamePage';
+import { HowToPlayPage } from './pages/HowToPlayPage';
 import { LobbyPage } from './pages/LobbyPage';
 
 const NAME_KEY = 'gotg_callsign';
@@ -16,6 +17,7 @@ export const App: React.FC = () => {
     return rand;
   });
   const [roomId, setRoomId] = useState<string | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
   const [joiningUrl, setJoiningUrl] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -95,12 +97,17 @@ export const App: React.FC = () => {
     return <GamePage roomId={roomId} uid={uid} onLeave={handleLeaveRoom} />;
   }
 
+  if (showGuide) {
+    return <HowToPlayPage onBack={() => setShowGuide(false)} />;
+  }
+
   return (
     <LobbyPage
       uid={uid}
       name={name}
       onNameChange={handleNameChange}
       onEnterRoom={handleEnterRoom}
+      onOpenGuide={() => setShowGuide(true)}
     />
   );
 };

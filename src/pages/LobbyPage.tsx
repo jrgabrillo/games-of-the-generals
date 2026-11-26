@@ -8,6 +8,7 @@ interface LobbyPageProps {
   name: string;
   onNameChange: (name: string) => void;
   onEnterRoom: (roomId: string) => void;
+  onOpenGuide: () => void;
 }
 
 export const LobbyPage: React.FC<LobbyPageProps> = ({
@@ -15,6 +16,7 @@ export const LobbyPage: React.FC<LobbyPageProps> = ({
   name,
   onNameChange,
   onEnterRoom,
+  onOpenGuide,
 }) => {
   const [rooms, setRooms] = useState<RoomMeta[]>([]);
   const [turnSeconds, setTurnSeconds] = useState<15 | 30 | 60>(30);
@@ -86,15 +88,24 @@ export const LobbyPage: React.FC<LobbyPageProps> = ({
               <p className="text-xs text-[#a8a29e]">8-BIT SALPAKAN • NO LOGIN</p>
             </div>
           </div>
-          <span
-            className={`px-2 py-1 text-xs font-bold border-2 border-[#0f0d13] ${
-              isFirebaseConfigured
-                ? 'bg-[#2c2633] text-[#6ee74b]'
-                : 'bg-[#2c2633] text-[#f59e0b]'
-            }`}
-          >
-            {isFirebaseConfigured ? '● LIVE' : '● LOCAL'}
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onOpenGuide}
+              className="pixel-btn px-2.5 py-1 bg-[#d9843b] text-[#0f0d13] text-xs font-black uppercase cursor-pointer"
+            >
+              ? GUIDE
+            </button>
+            <span
+              className={`px-2 py-1 text-xs font-bold border-2 border-[#0f0d13] ${
+                isFirebaseConfigured
+                  ? 'bg-[#2c2633] text-[#6ee74b]'
+                  : 'bg-[#2c2633] text-[#f59e0b]'
+              }`}
+            >
+              {isFirebaseConfigured ? '● LIVE' : '● LOCAL'}
+            </span>
+          </div>
         </div>
 
         {error && (

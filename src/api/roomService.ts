@@ -85,11 +85,24 @@ function getAllLocalRooms(): Record<string, RoomMeta> {
 
 // --- Public API ---
 
+const ROOM_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
+
+export function isRoomExpired(room: RoomMeta, now = Date.now()): boolean {
+  return room.status === 'waiting' && now - room.createdAt > ROOM_EXPIRY_MS;
+}
+
 export function subscribePublicRooms(cb: (rooms: RoomMeta[]) => void): () => void {
   const filterOpen = (all: Record<string, RoomMeta> | null): RoomMeta[] => {
     if (!all) return [];
+    const now = Date.now();
     return Object.values(all)
-      .filter((r) => r.isPublic && r.status === 'waiting' && r.playerCount < 2)
+      .filter(
+        (r) =>
+          r.isPublic &&
+          r.status === 'waiting' &&
+          r.playerCount < 2 &&
+          !isRoomExpired(r, now),
+      )
       .sort((a, b) => b.createdAt - a.createdAt);
   };
 
@@ -168,6 +181,13 @@ export async function joinRoom(params: {
 
   if (!room) {
     throw new Error(`Room "${roomId}" not found.`);
+  }
+
+  if (isRoomExpired(room, now)) {
+    if (!isFirebaseConfigured) {
+      localWrite(`rooms/${roomId}`, null);
+    }
+    throw new Error('Room expired (inactive for over 1 hour).');
   }
 
   // Reconnect if user is already in this room

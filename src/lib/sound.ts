@@ -12,7 +12,7 @@ function getCtx(): AudioContext | null {
   return audioCtx;
 }
 
-export function playSound(type: 'move' | 'challenge' | 'win' | 'lose', muted: boolean): void {
+export function playSound(type: 'move' | 'challenge' | 'win' | 'lose' | 'tick', muted: boolean): void {
   if (muted) return;
   const ctx = getCtx();
   if (!ctx) return;
@@ -23,7 +23,14 @@ export function playSound(type: 'move' | 'challenge' | 'win' | 'lose', muted: bo
   osc.connect(gain);
   gain.connect(ctx.destination);
 
-  if (type === 'move') {
+  if (type === 'tick') {
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(880, now);
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+    osc.start(now);
+    osc.stop(now + 0.055);
+  } else if (type === 'move') {
     osc.type = 'triangle';
     osc.frequency.setValueAtTime(240, now);
     osc.frequency.exponentialRampToValueAtTime(140, now + 0.07);
