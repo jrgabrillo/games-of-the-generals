@@ -9,6 +9,7 @@ interface LobbyPageProps {
   onNameChange: (name: string) => void;
   onEnterRoom: (roomId: string) => void;
   onOpenGuide: () => void;
+  onOpenPractice: () => void;
 }
 
 export const LobbyPage: React.FC<LobbyPageProps> = ({
@@ -17,6 +18,7 @@ export const LobbyPage: React.FC<LobbyPageProps> = ({
   onNameChange,
   onEnterRoom,
   onOpenGuide,
+  onOpenPractice,
 }) => {
   const [rooms, setRooms] = useState<RoomMeta[]>([]);
   const [turnSeconds, setTurnSeconds] = useState<15 | 30 | 60>(30);
@@ -188,6 +190,15 @@ export const LobbyPage: React.FC<LobbyPageProps> = ({
             {busy ? 'CREATING...' : '+ CREATE ROOM'}
           </button>
         </div>
+
+        {/* Practice Mode vs Bot */}
+        <button
+          type="button"
+          onClick={onOpenPractice}
+          className="pixel-btn w-full py-3 bg-[#d9843b] hover:bg-[#e5954f] text-[#0f0d13] font-black text-sm uppercase cursor-pointer"
+        >
+          🤖 PRACTICE MODE (VS BOT)
+        </button>
 
         {/* Join by Code */}
         <form
