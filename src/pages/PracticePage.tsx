@@ -363,6 +363,10 @@ export const PracticePage: React.FC<PracticePageProps> = ({ playerName, onBack }
           >
             START PRACTICE →
           </button>
+
+          <footer className="pt-2 pb-4 text-center text-xs text-[#a8a29e]">
+            vibe coded by @rufongabrillojr
+          </footer>
         </div>
       </div>
     );
